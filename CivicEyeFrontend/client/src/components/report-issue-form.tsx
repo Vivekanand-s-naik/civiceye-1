@@ -1018,7 +1018,7 @@ export function ReportIssueForm(props: { onSubmit: (data: any) => void }) {
         const photoData = reader.result as string;
         setImage(photoData);
         getCurrentLocation();
-        predictCategory(photoData);
+        predictCategory(photoData, file.name);
       };
       reader.onerror = () => {
         setError("Failed to read image file");
@@ -1027,7 +1027,7 @@ export function ReportIssueForm(props: { onSubmit: (data: any) => void }) {
     }
   };
 
-  const predictCategory = async (imageData: string) => {
+  const predictCategory = async (imageData: string, customFileName?: string) => {
     if (!reportType) {
       console.log("No report type selected");
       return;
@@ -1043,6 +1043,9 @@ export function ReportIssueForm(props: { onSubmit: (data: any) => void }) {
         body: JSON.stringify({
           image_base64: imageData,
           report_type: reportType,
+          file_name: customFileName || "",
+          title: formData?.title || "",
+          description: formData?.description || "",
         }),
       });
 
