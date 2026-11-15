@@ -417,7 +417,7 @@ export default function AuthorityDashboard() {
       setRefreshing(true);
       
       // Fetch all reports from backend
-      const response = await fetch("http://localhost:5000/api/reports");
+      const response = await fetch("/api/reports");
       
       if (!response.ok) {
         throw new Error(`Failed to fetch reports: ${response.status}`);
@@ -602,7 +602,7 @@ export default function AuthorityDashboard() {
       
       const reportType = report.report_type; // "ISSUE" or "VIOLATION"
       
-      const response = await fetch(`http://localhost:5000/api/reports/${issueId}/verify?report_type=${reportType}`, {
+      const response = await fetch(`/api/reports/${issueId}/verify?report_type=${reportType}`, {
         method: 'PUT',
       });
       

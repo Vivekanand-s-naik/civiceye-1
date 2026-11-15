@@ -139,6 +139,7 @@ interface User {
   role: string;
   aadharNumber?: string;
   phoneNumber?: string;
+  zone?: string;
 }
 
 interface UserContextType {

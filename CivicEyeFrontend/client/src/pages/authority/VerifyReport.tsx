@@ -206,7 +206,7 @@
 //   report_type: 'ISSUE' | 'VIOLATION';
 // }
 
-// const API_URL = "http://localhost:5000";
+// const API_URL = "";
 
 // export default function VerifyReport() {
 //   const [query, setQuery] = useState("");
@@ -589,7 +589,7 @@
 // }
 
 // // Your FastAPI backend URL
-// const API_URL = "http://localhost:5000";
+// const API_URL = "";
 
 // export default function VerifyReport() {
 //   const [query, setQuery] = useState("");
@@ -1114,7 +1114,7 @@ interface Report {
   report_type: 'ISSUE' | 'VIOLATION';
 }
 
-const API_URL = "http://localhost:5000";
+const API_URL = "";
 
 export default function VerifyReport() {
   const [query, setQuery] = useState("");

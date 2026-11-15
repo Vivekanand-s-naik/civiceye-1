@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { LoginForm } from "@/components/login-form";
 import { SignupForm } from "@/components/signup-form";
 import { UserRole } from "@/App";
 import { useUser } from "@/contexts/UserContext";
+import { useToast } from "@/hooks/use-toast";
 
 type AuthView = "login" | "signup";
 
@@ -12,113 +13,105 @@ interface AuthPageProps {
 
 export default function AuthPage({ onLogin }: AuthPageProps) {
   const [view, setView] = useState<AuthView>("login");
-  const [backendValue, setBackendValue] = useState<string | null>(null);
-
-  // ✅ Use hook at top-level
   const { setCurrentUser } = useUser();
+  const { toast } = useToast();
 
-  // Fetch sample value from FastAPI backend
-  useEffect(() => {
-    const fetchBackendValue = async () => {
-      try {
-        const response = await fetch("http://127.0.0.1:5000/api/value");
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        setBackendValue(data.value);
-      } catch (error) {
-        console.error("Failed to fetch backend value:", error);
+  const handleLoginSubmit = async (email: string, password: string) => {
+    try {
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.toLowerCase(), password }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Login failed with status ${response.status}`);
       }
-    };
-    fetchBackendValue();
-  }, []);
+
+      const result = await response.json();
+
+      const userData = {
+        id: result.id,
+        email: result.email,
+        fullName: result.fullName,
+        role: result.role,
+        aadharNumber: result.aadharNumber,
+        phoneNumber: result.phoneNumber,
+      };
+
+      setCurrentUser(userData);
+      localStorage.setItem("civiceye_user", JSON.stringify(userData));
+      localStorage.setItem("userRole", result.role);
+
+      toast({
+        title: `Welcome back, ${result.fullName}!`,
+        description: `Logged in as ${result.role.toUpperCase()}`,
+      });
+
+      onLogin(result.role as UserRole);
+    } catch (error: any) {
+      console.error("❌ Login failed:", error);
+      toast({
+        title: "Authentication Failed",
+        description: error.message || "Invalid credentials. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSignupSubmit = async (data: any) => {
+    try {
+      const response = await fetch("/api/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: data.name,
+          email: data.email.toLowerCase(),
+          password: data.password,
+          aadharNumber: data.aadhar,
+          role: data.role || "citizen",
+          phoneNumber: data.phone_number || null,
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || "Registration failed");
+      }
+
+      toast({
+        title: "Account Created Successfully!",
+        description: "You earned 50 welcome reward points. Please log in.",
+      });
+
+      setView("login");
+    } catch (error: any) {
+      console.error("❌ Signup failed:", error);
+      toast({
+        title: "Registration Error",
+        description: error.message || "Could not complete registration.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4" data-testid="page-auth">
-      {backendValue && <p className="absolute top-4 text-gray-500">{backendValue}</p>}
-
+    <div className="flex min-h-screen items-center justify-center p-4 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950" data-testid="page-auth">
       {view === "login" ? (
         <LoginForm
-          onLogin={async (email, password) => {
-            try {
-              // 🔐 Login handled by Express backend
-              const response = await fetch("http://127.0.0.1:3000/api/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email: email.toLowerCase(), password }),
-              });
-
-              if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-              const result = await response.json();
-              console.log("✅ Login successful:", result);
-
-              // ✅ Create user object
-              const userData = {
-                id: result.id,
-                email: result.email,
-                fullName: result.fullName,
-                role: result.role,
-                aadharNumber: result.aadharNumber,
-                phoneNumber: result.phoneNumber,
-              };
-
-              // ✅ Save to context and localStorage
-              setCurrentUser(userData);
-              localStorage.setItem("civiceye_user", JSON.stringify(userData));
-
-              // 🔁 Notify parent (for role-based routing)
-              onLogin((result.role as string).toLowerCase() as UserRole);
-
-              // 📤 Optional: notify FastAPI about login (for ML or activity tracking)
-              try {
-                await fetch("http://127.0.0.1:5000/api/ml/user-login", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    ...userData,
-                    loginTime: new Date().toISOString(),
-                  }),
-                });
-              } catch (e) {
-                console.warn("⚠️ Failed to sync login to FastAPI backend");
-              }
-            } catch (error) {
-              console.error("❌ Login failed:", error);
-              alert("Login failed. Please try again.");
-            }
-          }}
-          onForgotPassword={() => alert("Password recovery not implemented yet.")}
+          onLogin={handleLoginSubmit}
+          onForgotPassword={() =>
+            toast({
+              title: "Password Recovery",
+              description: "For demo accounts, use password 'citizen123', 'auth123', or 'admin123'.",
+            })
+          }
           onSignup={() => setView("signup")}
         />
       ) : (
         <SignupForm
-          onSignup={async (data) => {
-            try {
-              // 🧾 Signup handled by FastAPI backend
-              const response = await fetch("http://127.0.0.1:5000/api/signup", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  full_name: data.name,
-                  email: data.email.toLowerCase(),
-                  password: data.password,
-                  aadhar_number: data.aadhar,
-                  role: data.role.toUpperCase(),
-                  phone_number: data.phone_number || null,
-                }),
-              });
-
-              if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-              const result = await response.json();
-              console.log("🟢 Signup complete:", result);
-
-              alert("Signup successful! Please log in.");
-              setView("login");
-            } catch (error) {
-              console.error("❌ Signup failed:", error);
-              alert("Signup failed. Please try again.");
-            }
-          }}
+          onSignup={handleSignupSubmit}
           onLogin={() => setView("login")}
         />
       )}

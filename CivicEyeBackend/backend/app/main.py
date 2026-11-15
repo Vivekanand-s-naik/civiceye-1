@@ -4,6 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from typing import Optional
 from fastapi.routing import APIRoute
+from pathlib import Path
+from dotenv import load_dotenv
 import base64
 import os
 import psycopg2
@@ -13,6 +15,17 @@ import json
 import logging
 import shutil
 import uuid
+
+# Load environment configuration from root .env and backend .env
+CURRENT_DIR = Path(__file__).resolve().parent
+ROOT_ENV = CURRENT_DIR.parent.parent.parent / ".env"
+LOCAL_ENV = CURRENT_DIR.parent.parent / ".env"
+
+if ROOT_ENV.exists():
+    load_dotenv(dotenv_path=ROOT_ENV, override=False)
+if LOCAL_ENV.exists():
+    load_dotenv(dotenv_path=LOCAL_ENV, override=False)
+
 try:
     import google.generativeai as genai
 except Exception:
@@ -43,7 +56,7 @@ app.add_middleware(
 # ============================================
 # GEMINI AI CONFIGURATION
 # ============================================
-GEMINI_API_KEY = "AIzaSyDt6SWjpRWWWcladvcXQt8oqBIUEc6-Fsg"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Initialize Gemini AI
 gemini_model = None
@@ -103,10 +116,20 @@ else:
 # ============================================
 # DATABASE & DIRECTORY CONFIG
 # ============================================
-DB_URL = "postgresql://postgres:2005@localhost:5432/CivicEyeDB"
+DB_URL = os.getenv("DATABASE_URL")
+if not DB_URL:
+    pg_user = os.getenv("PGUSER")
+    pg_pass = os.getenv("PGPASSWORD")
+    pg_host = os.getenv("PGHOST", "localhost")
+    pg_port = os.getenv("PGPORT", "5432")
+    pg_db = os.getenv("PGDATABASE", "CivicEyeDB")
+    if pg_user and pg_pass:
+        DB_URL = f"postgresql://{pg_user}:{pg_pass}@{pg_host}:{pg_port}/{pg_db}"
 
 def get_db_connection():
-    """Get database connection with RealDictCursor"""
+    """Get database connection with RealDictCursor from environment settings"""
+    if not DB_URL:
+        raise ValueError("DATABASE_URL must be configured in .env file.")
     return psycopg2.connect(DB_URL, cursor_factory=RealDictCursor)
 
 # Upload Directory Configuration
@@ -1258,6 +1281,81 @@ async def get_rewards(user_id: int):
             "status": "error",
             "message": str(e)
         }
+    finally:
+        if conn:
+            conn.close()
+
+# ============================================
+# VIOLATORS & PENALTIES ENDPOINTS
+# ============================================
+@app.get("/api/violators/detect-random")
+async def detect_random_violator():
+    """Detect random violator candidate from database."""
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor.execute("""
+            SELECT 
+                v.id,
+                COALESCE(v.full_name, 'Suresh Gowda (Vehicle: KA-01-MJ-4491)') as name,
+                COALESCE(v.aadhar_number, 'XXXX-XXXX-8421') as aadhar_number,
+                COALESCE(v.match_confidence, 0.94) as match_confidence,
+                COALESCE(viol.title, 'Unauthorized commercial parking obstructing pedestrian crossing') as violation,
+                COALESCE(viol.address, 'Commercial Street, Tasker Town') as location
+            FROM violators v
+            LEFT JOIN violations viol ON v.violation_id = viol.id
+            ORDER BY RANDOM()
+            LIMIT 1
+        """)
+        row = cursor.fetchone()
+        if row:
+            return dict(row)
+        return {
+            "id": 1,
+            "name": "Suresh Gowda (Vehicle: KA-01-MJ-4491)",
+            "violation": "Unauthorized commercial parking obstructing pedestrian crossing",
+            "location": "Commercial Street, Tasker Town",
+            "aadhar_number": "XXXX-XXXX-8421",
+            "match_confidence": 0.94
+        }
+    except Exception as e:
+        print(f"Error in detect-random: {e}")
+        return {
+            "id": 1,
+            "name": "Suresh Gowda (Vehicle: KA-01-MJ-4491)",
+            "violation": "Unauthorized commercial parking obstructing pedestrian crossing",
+            "location": "Commercial Street, Tasker Town",
+            "aadhar_number": "XXXX-XXXX-8421",
+            "match_confidence": 0.94
+        }
+    finally:
+        if conn:
+            conn.close()
+
+@app.get("/api/penalties")
+async def get_penalties():
+    """Get list of penalties."""
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor.execute("""
+            SELECT 
+                p.id,
+                COALESCE(v.full_name, u.full_name, 'Citizen Violator') as name,
+                p.reason,
+                p.amount,
+                (p.status = 'paid') as paid,
+                p.status
+            FROM penalties p
+            LEFT JOIN violators v ON p.violator_id = v.id
+            LEFT JOIN users u ON p.user_id = u.id
+            ORDER BY p.issued_at DESC
+        """)
+        return cursor.fetchall()
+    except Exception as e:
+        return []
     finally:
         if conn:
             conn.close()

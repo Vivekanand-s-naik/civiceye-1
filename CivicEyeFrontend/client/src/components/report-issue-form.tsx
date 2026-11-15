@@ -9,7 +9,7 @@
 // import { Camera, Upload, MapPin, X, AlertTriangle, FileText, Loader2, Sparkles, User, LogIn, CheckCircle2 } from "lucide-react";
 // import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-// const API_URL = "http://127.0.0.1:5000";
+// const API_URL = "";
 
 // interface CategoryPrediction {
 //   predicted_category: string;
@@ -766,7 +766,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Camera, Upload, MapPin, X, AlertTriangle, FileText, Loader2, Sparkles, User, LogIn, CheckCircle2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-const API_URL = "http://127.0.0.1:5000";
+const API_URL = "";
 
 interface CategoryPrediction {
   predicted_category: string;
@@ -1037,13 +1037,13 @@ export function ReportIssueForm(props: { onSubmit: (data: any) => void }) {
     setError("");
     
     try {
-      const formData = new FormData();
-      formData.append("image_base64", imageData);
-      formData.append("report_type", reportType);
-
       const response = await fetch(`${API_URL}/api/ml/predict-category-base64`, {
         method: "POST",
-        body: formData
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image_base64: imageData,
+          report_type: reportType,
+        }),
       });
 
       if (!response.ok) {
@@ -1134,54 +1134,43 @@ export function ReportIssueForm(props: { onSubmit: (data: any) => void }) {
     setSubmitting(true);
     
     try {
-      const submitFormData = new FormData();
-      
-      // Required fields matching backend
-      submitFormData.append("user_id", String(currentUser.id));
-      submitFormData.append("title", formData.title || `${category.charAt(0).toUpperCase() + category.slice(1)} Report`);
-      submitFormData.append("description", formData.description || "No additional description provided");
-      submitFormData.append("category", category);
-      submitFormData.append("location", location.address);
-      
-      // Optional coordinates
-      if (location.lat && location.lng) {
-        submitFormData.append("latitude", String(location.lat));
-        submitFormData.append("longitude", String(location.lng));
-      }
-      
-      // Base64 image
-      submitFormData.append("image", image);
-      
-      // Prediction data
-      if (prediction) {
-        submitFormData.append("predicted_category", prediction.predicted_category);
-        submitFormData.append("ai_confidence", String(prediction.confidence));
-      }
-      
-      // Metadata
-      const metadata = {
-        ...formData,
-        prediction_category: prediction?.predicted_category,
-        prediction_confidence: prediction?.confidence,
-        submitted_by_name: currentUser.fullName,
-        submitted_by_email: currentUser.email,
-        submitted_by_role: currentUser.role
+      const payload = {
+        user_id: String(currentUser.id),
+        title: formData.title || `${category.charAt(0).toUpperCase() + category.slice(1)} Report`,
+        description: formData.description || "No additional description provided",
+        category: category,
+        location: location.address,
+        address: location.address,
+        latitude: location.lat ? String(location.lat) : undefined,
+        longitude: location.lng ? String(location.lng) : undefined,
+        image: image,
+        report_type: reportType,
+        predicted_category: prediction?.predicted_category,
+        ai_confidence: prediction?.confidence,
+        metadata: JSON.stringify({
+          ...formData,
+          prediction_category: prediction?.predicted_category,
+          prediction_confidence: prediction?.confidence,
+          submitted_by_name: currentUser.fullName,
+          submitted_by_email: currentUser.email,
+          submitted_by_role: currentUser.role,
+        }),
       };
-      submitFormData.append("metadata", JSON.stringify(metadata));
 
       console.log("📤 Submitting report:", {
         userId: currentUser.id,
         userName: currentUser.fullName,
         category: category,
         reportType: reportType,
-        hasImage: !!image
+        hasImage: !!image,
       });
 
       const response = await fetch(
         `${API_URL}/api/ml/submit-report?report_type=${reportType}`,
         {
           method: "POST",
-          body: submitFormData
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
         }
       );
 

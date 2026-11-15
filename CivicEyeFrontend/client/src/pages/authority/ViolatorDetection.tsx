@@ -87,11 +87,13 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 // --- Type Definition for API Response ---
 interface Violator {
-  violator_id: number;
-  full_name: string;
+  id?: number;
+  violator_id?: number;
+  full_name?: string;
+  name?: string;
   match_confidence: number;
-  face_image_path: string;
-  report_id: number;
+  face_image_path?: string;
+  report_id?: number;
   violation: string;
   location: string;
   aadhar_number: string;
@@ -99,7 +101,7 @@ interface Violator {
 
 // --- API Configuration ---
 
-const API_URL = "http://127.0.0.1:5000";
+const API_URL = "";
 
 export default function ViolatorDetection() {
   const [isDetecting, setIsDetecting] = useState(false);
@@ -152,12 +154,15 @@ export default function ViolatorDetection() {
           <AlertCircle className="mx-auto h-10 w-10 text-red-500 mb-4" />
           <div className="flex gap-4 items-center">
             <img 
-              src={`${API_URL}/${violator.face_image_path}`} 
+              src={violator.face_image_path ? `/${violator.face_image_path.replace(/^\/+/, '')}` : "/uploads/violations/parking_sample.jpg"} 
               alt="Detected Violator"
               className="h-24 w-24 rounded-lg border object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "/uploads/violations/parking_sample.jpg";
+              }}
             />
             <div className="space-y-1">
-              <p><b>Name:</b> {violator.full_name || "Unknown"}</p>
+              <p><b>Name:</b> {violator.full_name || violator.name || "Unknown"}</p>
               <p><b>Aadhar Match:</b> **** **** {violator.aadhar_number?.slice(-4)}</p>
               <p><b>Violation:</b> {violator.violation}</p>
               <p><b>Confidence:</b> {(violator.match_confidence * 100).toFixed(1)}%</p>

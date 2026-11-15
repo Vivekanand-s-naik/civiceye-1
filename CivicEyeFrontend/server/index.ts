@@ -1,15 +1,54 @@
+import dotenv from "dotenv";
 import express, { type Request, Response, NextFunction } from "express";
+import path from "path";
+import fs from "fs";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-process.env.DATABASE_URL = "postgresql://postgres:2005@localhost:5432/CivicEyeDB";
+
+// Automatically load environment variables from root .env or local .env
+const envPaths = [
+  path.resolve(process.cwd(), "..", ".env"),
+  path.resolve(process.cwd(), ".env"),
+  path.resolve(process.cwd(), "../..", ".env"),
+];
+for (const envPath of envPaths) {
+  if (fs.existsSync(envPath)) {
+    dotenv.config({ path: envPath });
+  }
+}
+
+if (!process.env.DATABASE_URL) {
+  const user = process.env.PGUSER;
+  const pass = process.env.PGPASSWORD;
+  const host = process.env.PGHOST || "localhost";
+  const port = process.env.PGPORT || "5432";
+  const db = process.env.PGDATABASE || "CivicEyeDB";
+  if (user && pass) {
+    process.env.DATABASE_URL = `postgresql://${user}:${pass}@${host}:${port}/${db}`;
+  }
+}
 
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
 
+// Enable larger body limits for base64 image uploads
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
+
+// Static uploads directory serving
+const rootUploads = path.resolve(process.cwd(), "..", "uploads");
+const localUploads = path.resolve(process.cwd(), "uploads");
+const backendUploads = path.resolve(process.cwd(), "..", "CivicEyeBackend", "backend", "uploads");
+
+app.use("/uploads", express.static(rootUploads));
+app.use("/uploads", express.static(localUploads));
+app.use("/uploads", express.static(backendUploads));
+app.use("/issues", express.static(path.join(rootUploads, "issues")));
+app.use("/violations", express.static(path.join(rootUploads, "violations")));
+
+// Request logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
-  const path = req.path;
+  const reqPath = req.path;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
   const originalResJson = res.json;
@@ -20,14 +59,14 @@ app.use((req, res, next) => {
 
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+    if (reqPath.startsWith("/api")) {
+      let logLine = `${req.method} ${reqPath} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
 
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
+      if (logLine.length > 100) {
+        logLine = logLine.slice(0, 99) + "…";
       }
 
       log(logLine);
@@ -38,11 +77,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || '3000', 10);
+  const port = parseInt(process.env.PORT || "3000", 10);
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -50,7 +85,7 @@ app.use((req, res, next) => {
     const message = err.message || "Internal Server Error";
 
     res.status(status).json({ message });
-    throw err;
+    console.error("Express Error:", err);
   });
 
   if (app.get("env") === "development") {
@@ -58,15 +93,20 @@ app.use((req, res, next) => {
   } else {
     serveStatic(app);
   }
-  server.listen(3000, '127.0.0.1', () => {
-  console.log('Server running on http://127.0.0.1:3000');
+
+  server.on("error", (err: any) => {
+    console.error("Server listen error:", err);
   });
 
-  // server.listen({
-  //   port,
-  //   host: "0.0.0.0",
-  //   reusePort: true,
-  // }, () => {
-  //   log(`serving on port ${port}`);
-  // });
+  server.listen(port, "127.0.0.1", () => {
+    console.log(`🚀 CivicEye Server running on http://127.0.0.1:${port}`);
+  });
 })();
+
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err);
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled Rejection:", reason);
+});

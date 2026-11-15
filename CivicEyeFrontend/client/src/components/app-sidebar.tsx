@@ -18,115 +18,162 @@ import {
   BarChart3,
   Settings,
   LogOut,
+  HelpCircle,
+  AlertCircle,
+  Eye,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import type { LucideIcon } from "lucide-react";
+import { useUser } from "@/contexts/UserContext";
+import { Badge } from "@/components/ui/badge";
 
 interface SidebarItem {
   title: string;
   href: string;
   icon: LucideIcon;
+  badge?: string;
 }
 
 interface AppSidebarProps {
-  role?: "citizen" | "authority" | "admin"; // optional to prevent crash
-  userName: string;
-  userEmail: string;
+  role?: "citizen" | "authority" | "admin";
+  userName?: string;
+  userEmail?: string;
 }
 
 export function AppSidebar({ role, userName, userEmail }: AppSidebarProps) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
+  const { currentUser, logout } = useUser();
 
-  if (!role) {
-    return (
-      <div className="flex items-center justify-center h-screen text-muted-foreground">
-        <p>Loading sidebar...</p>
-      </div>
-    );
-  }
+  const activeRole = role || (currentUser?.role as any) || "citizen";
+  const name = userName || currentUser?.fullName || "Citizen User";
+  const email = userEmail || currentUser?.email || "user@civiceye.com";
 
   const roleItems: Record<string, SidebarItem[]> = {
     citizen: [
-      { title: "Dashboard", href: "/citizen-dashboard", icon: Home },
-      { title: "Report Issue", href: "/report", icon: FileText },
+      { title: "Citizen Home", href: "/citizen-dashboard", icon: Home },
+      { title: "Report Issue", href: "/report", icon: AlertCircle },
       { title: "My Reports", href: "/my-reports", icon: FileText },
       { title: "Reward Wallet", href: "/rewards", icon: Award },
       { title: "Notifications", href: "/notifications", icon: Bell },
-      { title: "Support Center", href: "/support", icon: Shield },
+      { title: "Support Center", href: "/support", icon: HelpCircle },
     ],
     authority: [
-      { title: "Dashboard", href: "/authority-dashboard", icon: Home },
+      { title: "Authority Overview", href: "/authority-dashboard", icon: Home },
       { title: "Verify Reports", href: "/verify-report", icon: Shield },
-      { title: "Violator Detection", href: "/violator-detection", icon: Users },
-      { title: "Penalty Management", href: "/penalty-management", icon: FileText },
-      { title: "Map View", href: "/map-view", icon: Map },
-      { title: "AI Insights", href: "/ai-insights", icon: BarChart3 },
+      { title: "Violator AI Detection", href: "/violator-detection", icon: Users },
+      { title: "Penalty Enforcement", href: "/penalty-management", icon: FileText },
+      { title: "City Violation Map", href: "/map-view", icon: Map },
+      { title: "AI Analytics & Hotspots", href: "/ai-insights", icon: BarChart3 },
     ],
     admin: [
-      { title: "Admin Dashboard", href: "/admin-dashboard", icon: Home },
+      { title: "Admin Console", href: "/admin-dashboard", icon: Home },
       { title: "User Management", href: "/user-management", icon: Users },
-      { title: "System Logs", href: "/system-logs", icon: FileText },
+      { title: "System Audit Logs", href: "/system-logs", icon: FileText },
       { title: "Platform Settings", href: "/platform-settings", icon: Settings },
+      // Admin audit view into other dashboards
+      { title: "Review Reports (Audit)", href: "/verify-report", icon: Shield },
+      { title: "City Map View", href: "/map-view", icon: Map },
     ],
   };
 
-  const items = roleItems[role] ?? [];
+  const items = roleItems[activeRole] ?? roleItems.citizen;
+
+  const handleLogout = () => {
+    logout();
+    setLocation("/");
+  };
+
+  const getRoleBadgeColor = () => {
+    switch (activeRole) {
+      case "admin":
+        return "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300 border-purple-300";
+      case "authority":
+        return "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border-blue-300";
+      default:
+        return "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300";
+    }
+  };
 
   return (
-    <Sidebar>
-      {/* User Info */}
-      <SidebarGroup>
-        <SidebarGroupLabel>
-          <div className="p-2">
-            <p className="text-sm font-semibold">{userName}</p>
-            <p className="text-xs text-muted-foreground">{userEmail}</p>
+    <Sidebar className="border-r border-border/60">
+      {/* Brand Header */}
+      <div className="p-4 border-b border-border/60 flex items-center justify-between">
+        <a href="/" className="flex items-center gap-2 font-bold text-lg text-primary tracking-tight">
+          <div className="h-8 w-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-sm">
+            <Eye className="h-4 w-4" />
           </div>
-        </SidebarGroupLabel>
+          <span>Civic<span className="text-blue-600">Eye</span></span>
+        </a>
+        <Badge variant="outline" className={`text-[10px] uppercase font-bold tracking-wider ${getRoleBadgeColor()}`}>
+          {activeRole}
+        </Badge>
+      </div>
 
-        <SidebarGroupContent>
+      {/* User Info Bar */}
+      <SidebarGroup className="py-2">
+        <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground px-4">
+          Logged-In Profile
+        </SidebarGroupLabel>
+        <div className="px-4 py-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg mx-2 my-1 border border-border/40">
+          <p className="text-sm font-semibold truncate text-foreground">{name}</p>
+          <p className="text-xs text-muted-foreground truncate">{email}</p>
+          {currentUser?.aadharNumber && (
+            <p className="text-[10px] text-muted-foreground/80 mt-1">
+              Aadhaar: {currentUser.aadharNumber}
+            </p>
+          )}
+        </div>
+      </SidebarGroup>
+
+      {/* Navigation Menu */}
+      <SidebarGroup className="flex-1 py-1">
+        <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground px-4">
+          Navigation
+        </SidebarGroupLabel>
+        <SidebarGroupContent className="px-2">
           <SidebarMenu>
-            {items.map((item) => (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild>
-                  <a
-                    href={item.href}
-                    className={`flex items-center gap-2 px-2 py-1 rounded-md transition-colors ${
-                      location === item.href
-                        ? "bg-primary text-white"
-                        : "hover:bg-muted"
-                    }`}
-                    aria-current={location === item.href ? "page" : undefined}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    {item.title}
-                  </a>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
+            {items.map((item) => {
+              const isActive = location === item.href;
+              return (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild isActive={isActive}>
+                    <a
+                      href={item.href}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setLocation(item.href);
+                      }}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-sm transition-all ${
+                        isActive
+                          ? "bg-blue-600 text-white shadow-sm shadow-blue-500/20 font-semibold"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                      }`}
+                    >
+                      <item.icon className={`h-4 w-4 ${isActive ? "text-white" : "text-muted-foreground"}`} />
+                      <span>{item.title}</span>
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              );
+            })}
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>
 
       {/* Account Section */}
-      <SidebarGroup>
-        <SidebarGroupLabel>Account</SidebarGroupLabel>
-        <SidebarGroupContent>
+      <SidebarGroup className="border-t border-border/60 pt-2 pb-4">
+        <SidebarGroupContent className="px-2">
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <a href="/settings" className="flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
-                  Settings
-                </a>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <a href="/logout" className="flex items-center gap-2 text-red-500">
-                  <LogOut className="h-4 w-4" />
-                  Logout
-                </a>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                >
+                  <LogOut className="h-4 w-4 text-red-600" />
+                  <span>Sign Out</span>
+                </button>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>

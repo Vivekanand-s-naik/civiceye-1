@@ -112,13 +112,13 @@ Create a database, then keep the connection string handy:
 CREATE DATABASE CivicEyeDB;
 ```
 
-The current frontend development command expects:
+Configure your database connection in the root `.env` file:
 
-```text
-postgresql://postgres:2005@localhost:5432/CivicEyeDB
+```dotenv
+DATABASE_URL=postgresql://postgres:root@localhost:5432/CivicEyeDB
 ```
 
-For a different database, update the development configuration in `CivicEyeFrontend/package.json` and the backend `.env` file rather than committing credentials.
+All services (Frontend Express server and Backend FastAPI API) automatically read and load configuration directly from the root `.env` file.
 
 ### 2. Start the FastAPI backend
 
@@ -174,17 +174,17 @@ The script assumes a local Python/Uvicorn installation and may need path updates
 
 </details>
 
-## 🔐 Development login
+## 🔐 Development & Evaluation Logins
 
-The FastAPI seed script creates these roles with masked Aadhaar values. With mock OTP enabled, use `123456`.
+You can log in either by using the **1-Click Quick Demo Evaluation buttons** on the `/getStarted` page (or from the new Landing Page), or with the following credentials:
 
-| Role | Email | Aadhaar suffix | Mock OTP |
+| Role | Email | Password | Mock OTP (FastAPI) |
 | --- | --- | --- | --- |
-| Admin | `shreeveeraganapati15@gmail.com` | `1111` | `123456` |
-| Authority | `authority@civiceye.com` | `2222` | `123456` |
-| Citizen | `citizen@civiceye.com` | `3333` | `123456` |
+| **Citizen** | `citizen@civiceye.com` | `citizen123` | `123456` |
+| **Authority** | `authority@civiceye.com` | `auth123` | `123456` |
+| **Admin** | `admin@civiceye.com` | `admin123` | `123456` |
 
-> **Development only:** Aadhaar verification is mocked. Never use real Aadhaar numbers, production credentials, or real biometric data in local development.
+> **Tip:** You can switch roles at any time using the role selector pill located in the top navigation bar or the sidebar profile badge. All routes are strictly protected by Role-Based Access Control (RBAC).
 
 ## 🧭 Architecture
 

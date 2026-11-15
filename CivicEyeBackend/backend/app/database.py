@@ -59,16 +59,35 @@ Provides get_db dependency for FastAPI dependency injection.
 
 # app/database.py
 import os
+from pathlib import Path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.exc import SQLAlchemyError
 from dotenv import load_dotenv
 
-# Load environment variables from .env
-load_dotenv()
+# Search and load root .env and local .env
+CURRENT_DIR = Path(__file__).resolve().parent
+ROOT_ENV = CURRENT_DIR.parent.parent.parent / ".env"
+LOCAL_ENV = CURRENT_DIR.parent.parent / ".env"
 
-# Database URL (from .env)
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:2005@localhost:5432/CivicEyeDB")
+if ROOT_ENV.exists():
+    load_dotenv(dotenv_path=ROOT_ENV, override=False)
+if LOCAL_ENV.exists():
+    load_dotenv(dotenv_path=LOCAL_ENV, override=False)
+
+# Database URL from environment
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    pg_user = os.getenv("PGUSER")
+    pg_pass = os.getenv("PGPASSWORD")
+    pg_host = os.getenv("PGHOST", "localhost")
+    pg_port = os.getenv("PGPORT", "5432")
+    pg_db = os.getenv("PGDATABASE", "CivicEyeDB")
+    if pg_user and pg_pass:
+        DATABASE_URL = f"postgresql://{pg_user}:{pg_pass}@{pg_host}:{pg_port}/{pg_db}"
+
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL must be configured in root .env file.")
 
 # Create SQLAlchemy engine
 engine = create_engine(
