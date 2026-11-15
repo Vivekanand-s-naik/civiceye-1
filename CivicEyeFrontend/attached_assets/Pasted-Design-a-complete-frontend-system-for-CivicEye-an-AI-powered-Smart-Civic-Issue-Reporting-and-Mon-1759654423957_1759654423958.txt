@@ -1,0 +1,223 @@
+Design a complete frontend system for “CivicEye” — an AI-powered Smart Civic Issue Reporting and Monitoring Platform — using React.js as the frontend framework integrated with FastAPI REST Framework as backend and PostgreSQL as database.
+
+The UI should support role-based access for:
+
+Citizen (Reporter)
+
+Authority (Municipal Officer)
+
+Admin (System Manager)
+
+Include all key modules and screens listed below, ensuring a modern, minimal, dashboard-like design with easy navigation, charts, and maps.
+
+🧩 Overall Theme & UI Style
+
+Modern, minimal, data-driven UI (light/dark mode)
+
+Dashboard layout with sidebar navigation
+
+Blue, green, and grey color palette (tech + civic tone)
+
+Use cards, modals, tabs, and charts for clarity
+
+Map-based components powered by Leaflet or Google Maps
+
+👥 1. Authentication & Role Management
+
+Screens:
+
+Login page (email/password + role select: Citizen/Authority/Admin)
+
+Signup page (for citizens only)
+
+Forgot password
+
+Role-based access:
+
+Citizens → Public dashboard
+
+Authority/Admin → Management dashboard
+
+Redirect unauthorized users
+
+Features:
+
+JWT-based authentication
+
+Session persistence (React Context / Redux)
+
+FastAPI REST handles user permissions
+
+📱 2. Citizen Interface
+
+Pages/Components:
+
+Home Dashboard
+
+Welcome message with AI Assistant (“CivicEye Bot”)
+
+Quick stats (Issues reported, points earned, rewards balance)
+
+Report Issue Page
+
+Upload image (from camera/gallery)
+
+Auto-location via GPS
+
+Dropdown: issue type (garbage, pothole, streetlight, etc.)
+
+Text box: short description
+
+Submit button → creates ticket
+
+My Reports
+
+List of all submitted reports with status (Open, In Progress, Resolved)
+
+Filter/search by category or date
+
+Reward Wallet
+
+Shows earned points from validated reports
+
+Balance tracking & utilization (redeem for civic benefits)
+
+Profile Page
+
+Edit name, phone, address
+
+View civic rank (based on activity)
+
+🏛️ 3. Authority Dashboard (Municipal Officers)
+
+Pages/Components:
+
+Dashboard Overview
+
+Summary cards: total issues, pending, resolved, violations
+
+Interactive map showing issue hotspots
+
+Issue Management
+
+Table view of all reports with filters (type, priority, area)
+
+“Assign Task” or “Mark Resolved” buttons
+
+AI-prioritized queue: issues ranked by severity
+
+Violator Detection
+
+Image viewer + auto-detected violator faces (via AI model)
+
+Manual verify/edit violator identity
+
+Penalty collection section (amount, payment confirmation)
+
+Analytics
+
+Graphs for daily/weekly issue reports
+
+Heatmaps for frequent problem zones
+
+Resolution time tracking
+
+🧠 4. Admin Dashboard
+
+Pages/Components:
+
+System Overview
+
+Total users, total reports, resolution rate, reward pool balance
+
+User Management
+
+Add/remove users or change roles
+
+Monitor top reporters & authorities
+
+AI Model Monitoring
+
+Track model accuracy for image categorization & violator detection
+
+Re-train or upload new model version (optional)
+
+Reward Distribution
+
+View pending payouts
+
+Approve auto-utilization of reward points
+
+Logs & Security
+
+Access logs, API usage analytics
+
+Manage backup & security settings
+
+🤖 5. AI Assistant (CivicEye Bot)
+
+Features:
+
+Chat interface (bottom right popup)
+
+Uses OpenAI API or local NLP model
+
+Answers queries like:
+
+“Show my open issues”
+
+“Nearest garbage complaint”
+
+“How to report streetlight failure?”
+
+Suggests solutions before report submission
+
+Admin view: monitor common citizen queries
+
+🗺️ 6. Shared Components
+
+Navbar (logo + search + profile)
+
+Sidebar (dynamic per role)
+
+Toast/alert notifications
+
+Map view with markers (for issue locations)
+
+Charts (using Recharts or Chart.js)
+
+Image viewer modal for AI results
+
+Floating help/chat button (AI assistant)
+
+🧰 Tech Stack Summary
+
+Frontend: React.js (with React Router, Redux/Context API, Tailwind CSS, Chart.js, Leaflet)
+
+Backend: FastAPIFastAPI REST Framework (JWT Auth, API endpoints)
+
+Database: PostgreSQL
+
+AI Models: Integrated via FastAPI backend APIs (Face detection, issue classification)
+
+Maps: Google Maps / Leaflet
+
+Storage: AWS S3 (for images)
+
+Notifications: Firebase Cloud Messaging
+
+Auth: JWT / FastAPI Authentication
+
+⚡ Expected Flow
+
+Citizen logs in → reports an issue with image & location.
+
+Backend AI classifies issue & detects any violator face.
+
+Authority dashboard receives auto-routed report with location.
+
+Admin verifies penalty & credit rewards to reporter’s wallet.
+
+Analytics dashboard visualizes issue trends, violations & responses.
+
+AI Assistant helps users interact and get instant civic updates.

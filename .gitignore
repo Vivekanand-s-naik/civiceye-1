@@ -1,0 +1,83 @@
+# Dependencies
+node_modules/
+CivicEyeBackend/node_modules/
+CivicEyeFrontend/node_modules/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Build outputs
+dist/
+build/
+CivicEyeBackend/dist/
+CivicEyeFrontend/dist/
+CivicEyeFrontend/build/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+CivicEyeBackend/.env
+CivicEyeFrontend/.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Test coverage
+coverage/
+.nyc_output/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# TypeScript cache
+*.tsbuildinfo
+CivicEyeBackend/*.tsbuildinfo
+CivicEyeFrontend/*.tsbuildinfo
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploads (user generated content)
+uploads/
+CivicEyeBackend/uploads/
+CivicEyeFrontend/uploads/
+
+# Replit
+.replit
+replit.nix
+
+# Local tooling
+.kilo/
+
+# Misc
+*.pem
+.vercel
+.netlify
+360_F_110611016_5uNv2Tx5ir9rcIGCdnpeGqiQN5vC5Rb1.jpg
+download.jpg
+e202a82b-eedb-4e0a-bde7-46a99aca2cf5.jpg
+garbage.jpg
+
